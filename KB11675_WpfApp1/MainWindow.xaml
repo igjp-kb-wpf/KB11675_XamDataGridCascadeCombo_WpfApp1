@@ -1,0 +1,61 @@
+﻿<Window x:Class="KB11675_WpfApp1.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:igDP="http://infragistics.com/DataPresenter"
+        xmlns:igEditors="http://infragistics.com/Editors"
+        xmlns:local="clr-namespace:KB11675_WpfApp1"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Window.DataContext>
+        <local:MainWindowViewModel/>
+    </Window.DataContext>
+    <Window.Resources>
+        <!-- 都道府県の値を受け取ってその県に限定した市区町村リストを返す IMultiValueConverter を実装したクラスオブジェクトを Resources に追加する -->
+        <local:FilterCitiesByPrefectureCode x:Key="filterCitiesByPrefectureCode"/>
+    </Window.Resources>
+    <Grid>
+        <igDP:XamDataGrid
+            x:Name="xamDataGrid1"
+            DataSource="{Binding PrefecturesAndCities}">
+            <igDP:XamDataGrid.FieldLayouts>
+                <igDP:FieldLayout>
+                    <igDP:FieldLayout.Fields>
+                        <!-- ItemsSourceに都道府県のリストをバインドする -->
+                        <igDP:ComboBoxField
+                            Name="PrefectureCode" Label="都道府県"
+                            ItemsSource="{igDP:FieldBinding Prefectures}"
+                            ValuePath="PrefectureCode"
+                            DisplayMemberPath="PrefectureName">
+                        </igDP:ComboBoxField>
+                        <igDP:ComboBoxField Name="CityCode" Label="市区町村">
+                            <igDP:ComboBoxField.EditorStyle>
+                                <Style TargetType="{x:Type igEditors:XamComboEditor}">
+                                    <!--
+                                    ComboBoxField の ItemsSource に「都道府県」列の値 (都道府県コード) をバインドする。
+                                    Converter には都道府県コードを受け取ってその県に限定した市区町村のリストを返す Converter を指定する。
+                                    DataContext も Binding しているのは、第一義的には XamDataGrid の仮想化対策のため。
+                                    その他の理由として、今回は XamDataGrid の DataContext にすべての市区町村のデータを持つプロパティがあるという想定にしていて、それを Converter で取り出せるようにするため。
+                                    -->
+                                    <Setter Property="ItemsSource">
+                                        <Setter.Value>
+                                            <MultiBinding Converter="{StaticResource filterCitiesByPrefectureCode}" Mode="OneWay">
+                                                <!-- DataContext（ここでのDataContextはDataRecord） -->
+                                                <Binding/>
+                                                <!-- 同じ行の都道府県コード -->
+                                                <Binding Path="DataItem.PrefectureCode"/>
+                                            </MultiBinding>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="ValuePath" Value="CityCode"/>
+                                    <Setter Property="DisplayMemberPath" Value="CityName"/>
+                                </Style>
+                            </igDP:ComboBoxField.EditorStyle>
+                        </igDP:ComboBoxField>
+                    </igDP:FieldLayout.Fields>
+                </igDP:FieldLayout>
+            </igDP:XamDataGrid.FieldLayouts>
+        </igDP:XamDataGrid>
+    </Grid>
+</Window>
